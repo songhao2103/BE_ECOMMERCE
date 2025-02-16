@@ -43,6 +43,29 @@ const orderSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+
+    orderAddress: {
+      cityOrProvince: {
+        type: String,
+        required: true,
+      },
+      district: {
+        type: String,
+        required: true,
+      },
+      wardOrCommune: {
+        type: String,
+        riquired: true,
+      },
+      specific: {
+        type: String,
+        required: true,
+      },
+    },
+    phoneNumber: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true }
 );

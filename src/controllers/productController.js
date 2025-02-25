@@ -73,6 +73,158 @@ const productController = {
         .send("Server error when get product detail!! " + error.message);
     }
   },
+
+  // [POST] /product/get-products  //lấy danh sách sản phẩm phẩm ở trang productsList
+  getProducts: async (req, res) => {
+    const { limit, page } = req.query;
+    const { sortValue, filterValue, searchValue } = req.body;
+
+    //create object query
+    let filterObject = {
+      // status: "",
+    };
+
+    let sortObject = {};
+
+    try {
+      if (!sortObject || !filterValue || !limit || !page) {
+        console.log("Lỗi");
+
+        return res.status(400).send("Missing data!!");
+      }
+
+      //kiểm tra danh sách store và thêm vào object filter
+      if (filterValue.store.length > 0) {
+        filterObject = {
+          ...filterObject,
+          company: {
+            [filterValue.typeStore === "belong" ? "$in" : "$nin"]:
+              filterValue.store,
+          },
+        };
+      }
+
+      //kiểm tra danh sách device và thêm vào object filter
+      if (filterValue.deviceType.length > 0) {
+        filterObject = {
+          ...filterObject,
+          deviceType: {
+            [filterValue.typeDevice === "belong" ? "$in" : "$nin"]:
+              filterValue.deviceType,
+          },
+        };
+      }
+
+      //kiểm tra phần search
+      if (!!searchValue) {
+        filterObject = {
+          ...filterObject,
+          ["$or"]: [
+            { productName: { $regex: `${filterValue.search}`, $options: "i" } },
+            { company: { $regex: `${filterValue.search}`, $options: "i" } },
+          ],
+        };
+      }
+
+      //sort
+      if (sortValue.value !== 0) {
+        sortObject[sortValue.field] = sortValue.value;
+      }
+
+      const totalQuantity = await Product.countDocuments(filterObject);
+
+      const products = await Product.find(filterObject)
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .sort(sortObject);
+
+      res.status(200).json({
+        totalQuantity,
+        products,
+      });
+    } catch (error) {
+      console.log("Lỗi server khi lấy danh sách sản phẩm!! " + error.message);
+    }
+  },
+
+  //[GET] /product/get-type-filter  //lấy danh sách các type filter ở trang productsList
+  getTypeFilter: async (req, res) => {
+    try {
+      const products = await Product.find();
+      const typeStore = [
+        ...new Set(products.map((product) => product.company)),
+      ];
+
+      const typeDevice = [
+        ...new Set(products.map((product) => product.deviceType)),
+      ];
+
+      res.status(200).json({
+        store: typeStore,
+        deviceType: typeDevice,
+      });
+    } catch (error) {
+      console.log(
+        "Lỗi server khi lấy danh sách type filter!! " + error.message
+      );
+
+      res
+        .status(500)
+        .send("Lỗi server khi lấy danh sách type filter!! " + error.message);
+    }
+  },
+
+  //[POST] /product/get-product-search-home-page
+  getProductsSearchHomePage: async (req, res) => {
+    const { valueSearch, historySearchs } = req.body;
+    try {
+      let results = []; //Lưu danh sách sản phẩm trả về
+
+      if (!valueSearch) {
+        for (const search of historySearchs) {
+          if (results.length > 8) break;
+
+          //lấy sản phẩm
+          const products = await Product.find({
+            productName: { $regex: search, $options: "i" },
+          }).lean();
+
+          //Loại bỏ sản phẩm trùng lặp
+          const newProducts = products.filter(
+            (pro) =>
+              !results.some(
+                (existing) => existing._id.toString() === pro._id.toString()
+              )
+          );
+
+          results.push([...newProducts]);
+        }
+      } else {
+        const products = await Product.find({
+          productName: { $regex: valueSearch, $option: "i" },
+        });
+
+        results.push([...products]);
+      }
+
+      // Giới hạn kết quả tối đa là 8 sản phẩm
+      results = results.slice(0, 8);
+
+      res.status(200).send(results);
+    } catch (error) {
+      console.log(
+        "Lỗi server khi lấy danh sách sản phẩm search homepage!!" +
+          error.message
+      );
+
+      res
+        .status(500)
+        .send(
+          "Lỗi server khi lấy danh sách sản phẩm search homepage!!" +
+            error.message
+        );
+    }
+  },
 };
 
 export default productController;

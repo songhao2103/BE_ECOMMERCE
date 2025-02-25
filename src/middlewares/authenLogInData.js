@@ -1,5 +1,4 @@
 import dotenv from "dotenv";
-
 import passwordHandling from "../utils/passwordHandling.js";
 import User from "../models/userModel.js";
 

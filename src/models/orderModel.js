@@ -62,8 +62,14 @@ const orderSchema = mongoose.Schema(
         required: true,
       },
     },
+
     phoneNumber: {
       type: String,
+      required: true,
+    },
+
+    shippingFee: {
+      type: Number,
       required: true,
     },
   },

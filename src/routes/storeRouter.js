@@ -23,4 +23,11 @@ storeRouter.post(
 //get-store address in order page
 storeRouter.post("/get-address", authenToken, storeController.getAddressStore);
 
+//lấy danh sách đơn hàng của cửa hàng
+storeRouter.get(
+  "/get-store-orders-list/:storeId",
+  authenToken,
+  storeController.getStoreOrdersList
+);
+
 export default storeRouter;

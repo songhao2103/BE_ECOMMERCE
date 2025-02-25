@@ -32,4 +32,17 @@ adminRouter.post(
   adminController.adminRefuseProduct
 );
 
+//admin lấy danh sách đơn hàng đang được giao
+adminRouter.get(
+  "/get-orders-shipping",
+  authenToken,
+  adminController.getOrderShipping
+);
+
+//admin complete đơn hàng
+adminRouter.get(
+  "/admin-complete-order/:orderId",
+  adminController.completeOrder
+);
+
 export default adminRouter;

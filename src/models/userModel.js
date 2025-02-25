@@ -8,7 +8,7 @@ const userSchema = mongoose.Schema(
       unique: true,
       match: [/.+\@.+\..+/, "Email không hợp lệ"], // Validation email
     },
-    
+
     password: {
       type: String,
       required: true,
@@ -29,20 +29,35 @@ const userSchema = mongoose.Schema(
     role: {
       type: String,
       default: "customer",
-      enum: ["customer", "store", "admin"],
+      enum: ["customer", "store", "admin", "shipper"],
     },
 
     address: {
       cityOrProvince: {
-        type: String,
+        name: {
+          type: String,
+        },
+        id: {
+          type: String,
+        },
       },
 
       district: {
-        type: String,
+        name: {
+          type: String,
+        },
+        id: {
+          type: String,
+        },
       },
 
       wardOrCommune: {
-        type: String,
+        name: {
+          type: String,
+        },
+        id: {
+          type: String,
+        },
       },
 
       specific: {

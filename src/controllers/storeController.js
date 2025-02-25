@@ -1,6 +1,7 @@
 import Store from "../models/storeModel.js";
 import User from "../models/userModel.js";
 import Product from "../models/productModel.js";
+import Order from "../models/orderModel.js";
 
 const storeController = {
   //[post] /store/create  // create new store
@@ -160,6 +161,120 @@ const storeController = {
     } catch (error) {
       console.error("Error in getAddressStore:", error);
       return res.status(500).json({ message: "Internal Server Error" });
+    }
+  },
+
+  //[GET] /store/get-store-orders-list  //lấy danh sách đơn hàng của cửa hàng
+  getStoreOrdersList: async (req, res) => {
+    const { storeId } = req.params;
+    try {
+      //lấy thông tin của cửa hàng hiện tại
+      const currentStore = await Store.findById(storeId).lean();
+
+      //lấy danh sách đơn hàng của cửa hàng
+      const storeOrdersList = await Order.find({
+        storeName: currentStore.storeName,
+      }).lean();
+
+      //tập hợp tất cả các Id của sản phẩm để query 1 lần
+      const allProductsId = storeOrdersList.reduce((acc, order) => {
+        order.products.forEach((product) => {
+          acc.push(product.productId);
+        });
+        return acc;
+      }, []);
+
+      //tập hợp tất cả các id của người dùng đặt đơn hàng
+      const allUserIds = storeOrdersList.reduce((acc, order) => {
+        acc.push(order.userId);
+        return acc;
+      }, []);
+
+      //loại bỏ các id trùng lặp
+      const uniqueProductIds = [...new Set(allProductsId)];
+
+      //loại bỏ các giá trị trùng lặp của userIds
+      const uniqueUserIds = [...new Set(allUserIds)];
+
+      //query để lấy danh sách sản phẩm
+      const productsList = await Product.find({
+        _id: { $in: uniqueProductIds },
+      });
+
+      //query để lấy danh sách user
+      const usersList = await User.find({
+        _id: { $in: uniqueUserIds },
+      });
+
+      //tạo map có key là Id của sản phẩm và value là thông tin của sản phẩm đó
+      const productsMap = productsList.reduce((map, product) => {
+        map[product._id.toString()] = product;
+        return map;
+      }, {});
+
+      //tạo map có key là id của user và value là thông tin của user đó
+      const usersMap = usersList.reduce((map, user) => {
+        map[user._id.toString()] = user;
+        return map;
+      }, {});
+
+      //cập nhật lại thông tin đơn hàng, thêm các thông tin cần thiết của sản phẩm
+      const updateStoreOrdersList = storeOrdersList.map((order) => {
+        //lấy thông tin người dùng tương ứng
+        const currentUser = usersMap[order.userId];
+
+        if (!currentUser) {
+          throw new Error({
+            message: "Lỗi khi không tìm thấy người dùng tương ứng với order",
+            order: order,
+          });
+        }
+
+        const newProductsList = order.products.map((productOfOrder) => {
+          //lấy thông tin sản phẩm tương ứng
+          const currentProduct = productsMap[productOfOrder.productId];
+
+          if (!currentProduct) {
+            throw new Error({
+              message: "Lỗi khi không không tìm thấy sản phẩm tương ứng!!r",
+              productOfOrder: productOfOrder,
+            });
+          }
+
+          const imageOrder = currentProduct.images.find(
+            (image) => image.color === productOfOrder.color
+          );
+
+          return {
+            ...productOfOrder,
+            imageOrder: imageOrder,
+            productName: currentProduct.productName,
+            discount: currentProduct.discount,
+            price: currentProduct.price,
+            quantityStock: currentProduct[productOfOrder.color + "Quantity"],
+          };
+        });
+
+        return {
+          ...order,
+          products: newProductsList,
+          userName: currentUser.userName,
+        };
+      });
+
+      res.status(200).send(updateStoreOrdersList);
+    } catch (error) {
+      console.log(
+        "Lỗi server khi lấy danh sách các đơn hàng của cửa hàng!! error: " +
+          error.message
+      );
+
+      res
+        .status(500)
+        .send(
+          "Lỗi server khi lấy danh sách các đơn hàng của cửa hàng!! error: " +
+            error.message
+        );
     }
   },
 };

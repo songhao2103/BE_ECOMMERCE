@@ -122,6 +122,7 @@ const productController = {
           ["$or"]: [
             { productName: { $regex: `${filterValue.search}`, $options: "i" } },
             { company: { $regex: `${filterValue.search}`, $options: "i" } },
+            { deviceType: { $regex: `${filterValue.search}`, $options: "i" } },
           ],
         };
       }
@@ -176,13 +177,21 @@ const productController = {
 
   //[POST] /product/get-product-search-home-page
   getProductsSearchHomePage: async (req, res) => {
-    const { valueSearch, historySearchs } = req.body;
+    const { debouncedValueSearch, historySearchs } = req.body;
     try {
       let results = []; //Lưu danh sách sản phẩm trả về
 
-      if (!valueSearch) {
+      if (!debouncedValueSearch && historySearchs.length === 0) {
+        const productSelling = await Product.find()
+          .skip(0)
+          .limit(8)
+          .sort({ quantitySold: -1 })
+          .lean();
+
+        results.push(...productSelling);
+      } else if (!debouncedValueSearch) {
         for (const search of historySearchs) {
-          if (results.length > 8) break;
+          if (results.length >= 8) break;
 
           //lấy sản phẩm
           const products = await Product.find({
@@ -197,14 +206,21 @@ const productController = {
               )
           );
 
-          results.push([...newProducts]);
+          results.push(...newProducts);
         }
       } else {
         const products = await Product.find({
-          productName: { $regex: valueSearch, $option: "i" },
-        });
+          $or: [
+            { productName: { $regex: debouncedValueSearch, $options: "i" } },
+            { deviceType: { $regex: debouncedValueSearch, $options: "i" } },
+            { company: { $regex: debouncedValueSearch, $options: "i" } },
+          ],
+        })
 
-        results.push([...products]);
+          .limit(8)
+          .lean();
+
+        results.push(...products);
       }
 
       // Giới hạn kết quả tối đa là 8 sản phẩm
@@ -221,6 +237,55 @@ const productController = {
         .status(500)
         .send(
           "Lỗi server khi lấy danh sách sản phẩm search homepage!!" +
+            error.message
+        );
+    }
+  },
+
+  //[GET] /product/get-products-of-search  //lấy danh sách sản phẩm để hiện thị ở trang ProductsListOfSearch
+  getProductsOfSearch: async (req, res) => {
+    const { debouncedValueSearch, limit, page, sortValue } = req.query;
+    try {
+      if (!debouncedValueSearch || !limit || !page || !sortValue) {
+        throw new Error("Missing data!!");
+      }
+
+      const totalQuantity = await Product.countDocuments({
+        $or: [
+          { productName: { $regex: debouncedValueSearch, $options: "i" } },
+          { deviceType: { $regex: debouncedValueSearch, $options: "i" } },
+          { company: { $regex: debouncedValueSearch, $options: "i" } },
+        ],
+      });
+
+      const sortObject = [1, -1].includes(Number(sortValue))
+        ? { price: Number(sortValue) }
+        : {};
+
+      const products = await Product.find({
+        $or: [
+          { productName: { $regex: debouncedValueSearch, $options: "i" } },
+          { deviceType: { $regex: debouncedValueSearch, $options: "i" } },
+          { company: { $regex: debouncedValueSearch, $options: "i" } },
+        ],
+      })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .sort(sortObject);
+
+      console.log(sortObject);
+
+      res.status(200).json({ products, totalQuantity });
+    } catch (error) {
+      console.log(
+        "Lỗi server khi lấy danh sách sản phẩm ở ProductsListOfSearch! error: " +
+          error.message
+      );
+
+      res
+        .status(500)
+        .send(
+          "Lỗi server khi lấy danh sách sản phẩm ở ProductsListOfSearch! error: " +
             error.message
         );
     }

@@ -3,6 +3,11 @@ import productController from "../controllers/productController.js";
 
 const productRouter = express.Router();
 
+productRouter.get(
+  "/get-products-of-search",
+  productController.getProductsOfSearch
+);
+
 productRouter.post(
   "/get-product-search-home-page",
   productController.getProductsSearchHomePage

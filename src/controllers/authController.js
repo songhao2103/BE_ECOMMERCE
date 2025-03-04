@@ -74,6 +74,7 @@ const authController = {
         success: false,
         errors: errors,
         message: "Đăng ký không thành công!!",
+        formData: { userName, email, password, rePassword },
       });
     } catch (error) {
       res

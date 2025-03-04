@@ -4,7 +4,10 @@ const productController = {
   //[GET] /product/products-sale   == lấy danh sách sản phẩm đang được khuyễn mãi ở HomePage
   getProductsSale: async (req, res) => {
     try {
-      const productsSale = await Product.find({ discount: { $gt: 0 } }).sort({
+      const productsSale = await Product.find({
+        discount: { $gt: 0 },
+        status: "accept",
+      }).sort({
         discount: -1,
       });
 
@@ -30,7 +33,7 @@ const productController = {
   //[GET] /product/product-selling  == lấy danh sách sản phẩm bán chạy ở trang HomePage
   getProductSelling: async (req, res) => {
     try {
-      const productSelling = await Product.find()
+      const productSelling = await Product.find({ status: "accept" })
         .skip(0)
         .limit(4)
         .sort({ quantitySold: -1 });
@@ -81,7 +84,7 @@ const productController = {
 
     //create object query
     let filterObject = {
-      // status: "",
+      status: "accept",
     };
 
     let sortObject = {};
@@ -120,9 +123,9 @@ const productController = {
         filterObject = {
           ...filterObject,
           ["$or"]: [
-            { productName: { $regex: `${filterValue.search}`, $options: "i" } },
-            { company: { $regex: `${filterValue.search}`, $options: "i" } },
-            { deviceType: { $regex: `${filterValue.search}`, $options: "i" } },
+            { productName: { $regex: `${searchValue}`, $options: "i" } },
+            { company: { $regex: `${searchValue}`, $options: "i" } },
+            { deviceType: { $regex: `${searchValue}`, $options: "i" } },
           ],
         };
       }
@@ -151,7 +154,7 @@ const productController = {
   //[GET] /product/get-type-filter  //lấy danh sách các type filter ở trang productsList
   getTypeFilter: async (req, res) => {
     try {
-      const products = await Product.find();
+      const products = await Product.find({ status: "accept" });
       const typeStore = [
         ...new Set(products.map((product) => product.company)),
       ];
@@ -182,7 +185,7 @@ const productController = {
       let results = []; //Lưu danh sách sản phẩm trả về
 
       if (!debouncedValueSearch && historySearchs.length === 0) {
-        const productSelling = await Product.find()
+        const productSelling = await Product.find({ status: "accept" })
           .skip(0)
           .limit(8)
           .sort({ quantitySold: -1 })
@@ -196,6 +199,7 @@ const productController = {
           //lấy sản phẩm
           const products = await Product.find({
             productName: { $regex: search, $options: "i" },
+            status: "accept",
           }).lean();
 
           //Loại bỏ sản phẩm trùng lặp
@@ -215,6 +219,7 @@ const productController = {
             { deviceType: { $regex: debouncedValueSearch, $options: "i" } },
             { company: { $regex: debouncedValueSearch, $options: "i" } },
           ],
+          status: "accept",
         })
 
           .limit(8)
@@ -256,6 +261,7 @@ const productController = {
           { deviceType: { $regex: debouncedValueSearch, $options: "i" } },
           { company: { $regex: debouncedValueSearch, $options: "i" } },
         ],
+        status: "accept",
       });
 
       const sortObject = [1, -1].includes(Number(sortValue))
@@ -268,12 +274,11 @@ const productController = {
           { deviceType: { $regex: debouncedValueSearch, $options: "i" } },
           { company: { $regex: debouncedValueSearch, $options: "i" } },
         ],
+        status: "accept",
       })
         .skip((page - 1) * limit)
         .limit(limit)
         .sort(sortObject);
-
-      console.log(sortObject);
 
       res.status(200).json({ products, totalQuantity });
     } catch (error) {

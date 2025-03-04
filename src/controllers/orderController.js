@@ -79,6 +79,7 @@ const orderController = {
               product[product.colorOnCart + "Quantity"] -
               product.quantityOnCart,
             totalQuantity: product.totalQuantity - product.quantityOnCart,
+            quantitySold: product.quantitySold + product.quantityOnCart,
           },
         }).catch((error) => {
           // Xử lý lỗi nếu có (có thể log hoặc xử lý tùy theo yêu cầu)
@@ -230,6 +231,7 @@ const orderController = {
               productOnOrder.quantity,
             totalQuantity:
               currentProduct.totalQuantity + productOnOrder.quantity,
+            quantitySold: currentProduct.quantitySold - productOnOrder.quantity,
           },
         });
       });

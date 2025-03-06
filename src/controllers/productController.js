@@ -82,6 +82,9 @@ const productController = {
     const { limit, page } = req.query;
     const { sortValue, filterValue, searchValue } = req.body;
 
+    const limitNum = parseInt(limit, 10);
+    const pageNum = parseInt(page, 10);
+
     //create object query
     let filterObject = {
       status: "accept",
@@ -132,14 +135,16 @@ const productController = {
 
       //sort
       if (sortValue.value !== 0) {
-        sortObject[sortValue.field] = sortValue.value;
+        sortObject[sortValue.field] = parseInt(sortValue.value, 10);
+      } else {
+        sortObject = { _id: 1 };
       }
 
       const totalQuantity = await Product.countDocuments(filterObject);
 
       const products = await Product.find(filterObject)
-        .skip((page - 1) * limit)
-        .limit(limit)
+        .skip((pageNum - 1) * limitNum)
+        .limit(limitNum)
         .sort(sortObject);
 
       res.status(200).json({

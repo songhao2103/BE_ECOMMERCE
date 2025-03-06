@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Cart from "../models/cartModel.js";
 import Product from "../models/productModel.js";
 import User from "../models/userModel.js";
@@ -84,7 +85,10 @@ const cartController = {
   //[POST] /cart/products   Lấy danh sách sản phẩm của giỏ hàng
   getProductsOfCart: async (req, res) => {
     const productsOfRedux = req.body.products;
-    const productId = productsOfRedux.map((product) => product.productId);
+    const productId = productsOfRedux.map(
+      (product) => new mongoose.Types.ObjectId(product.productId)
+    );
+
     try {
       let products = await Product.find({
         _id: { $in: productId },

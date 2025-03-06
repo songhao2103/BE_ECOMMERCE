@@ -30,7 +30,6 @@ const authenProductData = async (req, res, next) => {
       !formData.describe ||
       !formData.price ||
       !formData.discount ||
-      !formData.company ||
       !formData.deviceType ||
       !formData.totalQuantity
     ) {

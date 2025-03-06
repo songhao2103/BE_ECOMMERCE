@@ -6,15 +6,16 @@ import Order from "../models/orderModel.js";
 const storeController = {
   //[post] /store/create  // create new store
   createStore: async (req, res) => {
-    const { storeName, storeEmail } = req.body;
+    const { storeName, storeEmail, storeAddress } = req.body;
 
     const newErrors = {
       storeName: "",
       storeEmail: "",
+      storeAddress: "",
     };
 
     try {
-      if (!storeName || !storeEmail) {
+      if (!storeName || !storeEmail || !storeAddress) {
         newErrors.storeEmail = "Missing data!";
 
         return res.status(400).json({
@@ -49,6 +50,7 @@ const storeController = {
 
       const newStore = new Store({
         storeName,
+        storeAddress,
       });
 
       await newStore.save();
@@ -105,6 +107,7 @@ const storeController = {
       //tạo mới sản phẩm
       const newProduct = new Product({
         ...formData,
+        company: currentStore.storeName.toLowerCase(),
         images: images,
         storeName: currentStore.storeName,
       });
@@ -164,7 +167,7 @@ const storeController = {
     }
   },
 
-  //[GET] /store/get-store-orders-list  //lấy danh sách đơn hàng của cửa hàng
+  //[GET] /store/get-store-orders-list/:storeId  //lấy danh sách đơn hàng của cửa hàng
   getStoreOrdersList: async (req, res) => {
     const { storeId } = req.params;
     try {

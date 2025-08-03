@@ -23,6 +23,7 @@ productRouter.get(
 );
 
 productRouter.post("/get-products", productController.getProducts);
+productRouter.get("/get-products", productController.getProductsV2);
 
 productRouter.get("/get-type-filter", productController.getTypeFilter);
 

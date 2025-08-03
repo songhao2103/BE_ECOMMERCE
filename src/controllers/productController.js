@@ -156,6 +156,27 @@ const productController = {
     }
   },
 
+  // [GET] /product/get-productsV2  //lấy danh sách sản phẩm phẩm ở trang productsList
+  getProductsV2: async (req, res) => {
+    const { limit, page } = req.query;
+
+    const limitNum = parseInt(limit, 10);
+    const pageNum = parseInt(page, 10);
+
+    try {
+      const products = await Product.find()
+        .skip((pageNum - 1) * limitNum)
+        .limit(limitNum);
+
+      res.status(200).json({
+        totalQuantity,
+        products,
+      });
+    } catch (error) {
+      console.log("Lỗi server khi lấy danh sách sản phẩm!! " + error.message);
+    }
+  },
+
   //[GET] /product/get-type-filter  //lấy danh sách các type filter ở trang productsList
   getTypeFilter: async (req, res) => {
     try {
